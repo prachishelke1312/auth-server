@@ -35,13 +35,13 @@ type RedisConfig struct {
 	TTL int
 }
 
+
 type JWTConfig struct {
 	AccessSecret  string
 	RefreshSecret string
 	AccessExpiry  string
 	RefreshExpiry string
 }
-
 type OAuthConfig struct {
 	Google GoogleOAuthConfig
 	GitHub GitHubOAuthConfig
@@ -59,13 +59,13 @@ type GitHubOAuthConfig struct {
 	CallbackURL  string
 }
 
-
 type SecurityConfig struct {
 	BcryptRounds           int
 	RateLimitWindow        int
 	RateLimitMax           int
 	AccountLockMaxAttempts int
 	AccountLockDuration    int // in minutes
+	EncryptionKey          string
 }
 
 func LoadConfig() *Config {
@@ -86,6 +86,11 @@ func LoadConfig() *Config {
 
 	appURL := getEnv("APP_URL", "http://localhost:3000")
 
+	encKey := getEnv("ENCRYPTION_KEY", "")
+	if encKey == "" || encKey == "0123456789abcdef0123456789abcdef" {
+		log.Fatal("ENCRYPTION_KEY must be set to a unique secret")
+	}
+
 	return &Config{
 		App: AppConfig{
 			Port: port,
@@ -102,10 +107,10 @@ func LoadConfig() *Config {
 			TTL: redisTTL,
 		},
 		JWT: JWTConfig{
-			AccessSecret:  getEnv("JWT_SECRET", ""),
-			RefreshSecret: getEnv("JWT_REFRESH_SECRET", ""),
-			AccessExpiry:  "15m",
-			RefreshExpiry: "168h", // 7 days
+    		AccessSecret:  getEnv("JWT_SECRET", ""),
+    		RefreshSecret: getEnv("JWT_REFRESH_SECRET", ""),
+    		AccessExpiry:  getEnv("JWT_ACCESS_EXPIRY", "15m"),
+    		RefreshExpiry: getEnv("JWT_REFRESH_EXPIRY", "168h"),
 		},
 		OAuth: OAuthConfig{
 			Google: GoogleOAuthConfig{
@@ -126,6 +131,7 @@ func LoadConfig() *Config {
 			RateLimitMax:           rateLimitMax,
 			AccountLockMaxAttempts: accountLockMax,
 			AccountLockDuration:    accountLockDuration,
+			EncryptionKey:          encKey,
 		},
 	}
 }
